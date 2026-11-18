@@ -56,8 +56,23 @@ input{font:inherit;font-size:1.4rem;text-align:center;border:2px solid var(--ink
 .cf{position:fixed;top:-2rem;font-size:1.6rem;animation:fall 4s linear forwards;pointer-events:none}
 @keyframes fall{to{transform:translateY(110vh) rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
-</style></head><body><div id="bg"></div>
-<div id="wrap"><div class="hud" id="hud"></div><div class="chips" id="chips"></div><main id="app"></main></div>
+#fx{position:fixed;inset:0;z-index:-1;pointer-events:none}
+.card{transform:perspective(900px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .12s}
+.ov{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:#030812ee;backdrop-filter:blur(6px);animation:fd2 .3s;padding:20px;cursor:pointer}
+@keyframes fd2{from{opacity:0}}
+.ovc{text-align:center;max-width:420px}
+.ove{font-size:7rem;animation:zoom .6s cubic-bezier(.2,1.4,.4,1);filter:drop-shadow(0 0 24px var(--teal))}
+@keyframes zoom{from{transform:scale(.2) rotate(-40deg);opacity:0}}
+.ovt{font-size:1.05rem;color:var(--teal);min-height:5em;text-shadow:0 0 8px #5eead488}
+.key{display:inline-block;color:#fff;background:var(--red);padding:0 .4em;border-radius:4px;font-size:1.8rem;margin:0 4px;animation:kp 1s infinite;text-shadow:none}
+@keyframes kp{50%{box-shadow:0 0 22px var(--red);transform:scale(1.18)}}
+.ovh{color:#7dd3c0;font-size:.75rem;margin-top:14px}
+.wipe{position:fixed;top:0;bottom:0;left:0;width:30vw;z-index:40;pointer-events:none;background:linear-gradient(90deg,#0000,#5eead455,#0000);animation:wp .6s forwards}
+@keyframes wp{from{transform:translateX(-30vw)}to{transform:translateX(110vw)}}
+.prog{height:4px;background:#5eead422;border-radius:2px;margin:6px 0}.prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--teal),var(--amb));box-shadow:0 0 10px var(--teal);transition:width .8s}
+.bar2{font-weight:700;color:#6b5d44;text-align:center}
+</style></head><body><div id="bg"></div><canvas id="fx"></canvas>
+<div id="wrap"><div class="hud" id="hud"></div><div class="prog"><i id="pg"></i></div><div class="chips" id="chips"></div><main id="app"></main></div>
 <footer id="tick"><span></span></footer>
 <script>
 const $=q=>document.querySelector(q),app=$('#app'),RM=matchMedia('(prefers-reduced-motion:reduce)').matches;
@@ -74,22 +89,31 @@ let step=0,got=0,prev=0,hints=0,hinted=false,mute=false,tw,ctx;
 function beep(f,d=.12,t='square'){if(mute||!window.AudioContext)return;try{ctx=ctx||new AudioContext();const o=ctx.createOscillator(),g=ctx.createGain();o.type=t;o.frequency.value=f;g.gain.value=.05;o.connect(g);g.connect(ctx.destination);o.start();g.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+d);o.stop(ctx.currentTime+d)}catch(e){}}
 function say(t){const l=$('.log');if(!l)return;clearInterval(tw);if(RM){l.textContent=t;return}let i=0;l.textContent='';tw=setInterval(()=>{l.textContent=t.slice(0,++i);if(i>=t.length)clearInterval(tw)},16)}
 function burst(){if(RM)return;for(let i=0;i<16;i++){const s=el('span','cf','✦');s.style.cssText='top:40vh;left:50vw;animation:none;color:#ffb703';document.body.append(s);const a=Math.random()*6.28,r=80+Math.random()*120;s.animate([{transform:'translate(0,0)',opacity:1},{transform:`translate(${Math.cos(a)*r}px,${Math.sin(a)*r}px) scale(.3)`,opacity:0}],{duration:900}).onfinish=()=>s.remove()}}
-function hud(){const h=$('#hud');h.replaceChildren(el('span','','ARCHIVO FARO'),el('span','',step>5?'DESCLASIFICADO':'NIVEL '+(step+1)+'/6'));
+function hud(){$('#pg').style.width=(step>5?100:got*10)+'%';const h=$('#hud');h.replaceChildren(el('span','','ARCHIVO FARO'),el('span','',step>5?'DESCLASIFICADO':'NIVEL '+(step+1)+'/6'));
  const m=el('button','',mute?'🔇':'🔊');m.setAttribute('aria-label','Sonido');m.onclick=()=>{mute=!mute;hud()};h.append(m);
  $('#chips').replaceChildren(...order.map((o,i)=>el('div','chip'+(i<got?' on':'')+(i>=prev&&i<got?' pop':''),i<got?L[o]:'?')))}
 function screen(title,intro,body,hint){hinted=false;const c=el('section','card');c.append(el('span','stamp','CLASIFICADO'),el('h1','',title),el('p','',intro),body);
  if(hint){const h=el('p','');h.hidden=true;const b=el('button','ghost','¿Pista? (costo: tu dignidad)');b.onclick=()=>{if(!hinted){hints++;hinted=true}h.textContent=hint;h.hidden=false};c.append(b,h)}
- app.replaceChildren(c);hud()}
-function win(m){prev=got;got+=2;step++;hud();beep(660,.15);setTimeout(()=>beep(880,.2),150);burst();say('> '+m+'\n> Letras desbloqueadas: '+order.slice(prev,got).map(o=>L[o]).join(' '));setTimeout(next,2400)}
-function bad(m){beep(120,.25,'sawtooth');say('> '+m);const c=$('.card');c.classList.remove('shake');void c.offsetWidth;c.classList.add('shake')}
+ app.replaceChildren(c);hud();wipe()}
+function win(m){flash('#3ecf8e');prev=got;got+=2;step++;hud();beep(660,.15);setTimeout(()=>beep(880,.2),150);burst();say('> '+m+'\n> Letras desbloqueadas: '+order.slice(prev,got).map(o=>L[o]).join(' '));setTimeout(next,2400)}
+function bad(m){flash('#e0453a');beep(120,.25,'sawtooth');say('> '+m);const c=$('.card');c.classList.remove('shake');void c.offsetWidth;c.classList.add('shake')}
 const norm=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase();
+const flash=c=>{if(!RM)document.body.animate([{boxShadow:'inset 0 0 140px '+c},{boxShadow:'inset 0 0 0 '+c}],{duration:500})};
+function wipe(){if(RM)return;const w=el('div','wipe');document.body.append(w);setTimeout(()=>w.remove(),700);beep(300,.08,'triangle')}
+// Inspección expandida con texto que se descifra
+function inspect(e,t){beep(300,.1,'triangle');let id;const o=el('div','ov'),c=el('div','ovc'),tx=el('div','ovt');
+ c.append(el('div','ove',e),tx,el('div','ovh','toca para cerrar · Esc'));o.append(c);document.body.append(o);
+ const k=ev=>{if(ev.key==='Escape')close()},close=()=>{clearInterval(id);o.remove();removeEventListener('keydown',k)};o.onclick=close;addEventListener('keydown',k);
+ const m=t.match(/^(.*?dígito: )(\d)(.*)$/),full=m?m[1]:t,G='█▓▒░#%&@01';let i=0;
+ id=setInterval(()=>{i+=2;if(RM)i=full.length;tx.textContent=full.slice(0,i)+Array.from({length:Math.max(0,Math.min(8,full.length-i))},()=>G[Math.random()*G.length|0]).join('');
+  if(i>=full.length){clearInterval(id);tx.textContent=full;if(m){tx.append(el('span','key',m[2]));beep(880,.2);tx.append(m[3])}}},30)}
 // Reto 1: candado 3907
 const items=[['🗄️','Archivero. Contiene 400 memos sobre grapadoras.'],['🖼️','Retrato de familia. Atrás, con letra torcida: "1.er dígito: 3". Hay un hueco en el marco para uno más.'],['🪴','Una planta. Dice no saber nada.'],['📞','Teléfono. Suena ocupado, como siempre.'],
 ['☕','Café descafeinado. Muy sospechoso.'],['🍼','Biberón en el estante, medio vacío. En la etiqueta: "2.º dígito: 9".'],['🧦','Calcetín minúsculo. Seguro es de un hámster.'],['📅','Calendario con un círculo rojo. A lápiz: "4.º dígito: 7".'],
 ['💼','Maletín vacío. Nota: "no abrir el maletín".'],['🧸','Peluche tras la planta. En la etiqueta: "3.er dígito: 0".'],['🔦','Linterna sin pilas. Útil como adorno.'],['🚪','Puerta cerrada con candado de 4 dígitos.'],
 ['🎵','Cajita de música. Suena una nana desafinada.'],['🧶','Lana a medio tejer. Nadie sabe quién empezó.'],['🧩','Puzzle de piezas enormes. "Mayores de 0 años".'],['🛒','Carrito de archivos. Alguien le puso cinturón.']];
 function reto1(){const b=el('div'),room=el('div','room'),log=el('div','log','> Revisa la oficina. Toca los objetos.');
- items.forEach(([e,t])=>{const x=el('button','',e);x.setAttribute('aria-label','Inspeccionar');x.onclick=()=>{x.classList.add('seen');beep(300,.06);say('> '+t)};room.append(x)});
+ items.forEach(([e,t])=>{const x=el('button','',e);x.setAttribute('aria-label','Inspeccionar');x.onclick=()=>{x.classList.add('seen');inspect(e,t)};room.append(x)});
  const row=el('div','row'),ins=[0,1,2,3].map(()=>{const i=el('input','d');i.maxLength=1;i.inputMode='numeric';i.setAttribute('aria-label','dígito');row.append(i);return i});
  ins.forEach((i,k)=>i.oninput=()=>{if(i.value&&ins[k+1])ins[k+1].focus()});
  const g=el('button','go','Abrir candado');g.onclick=()=>ins.map(i=>i.value).join('')==='3907'?win('Candado abierto.'):bad('Código incorrecto. El candado se ríe de ti.');
@@ -99,13 +123,15 @@ function reto2(){const b=el('div'),i=el('input','t');i.setAttribute('aria-label'
  const g=el('button','go','Descifrar');g.onclick=()=>norm(i.value)==='BRUJULA'?win('Mensaje descifrado.'):bad('Texto ilegible. Intenta otra vez.');
  b.append(g,el('div','log','> Mensaje interceptado. Una palabra indica la dirección.'));screen('Nivel 2: Mensaje en clave','Descifra la palabra del archivo interceptado.',b,'Cada letra se movió 3 lugares hacia adelante. Retrocede 3: la E pasa a ser B.')}
 // Reto 3: señal (Simon)
-function reto3(){const col=['#e0453a','#ffb703','#3ecf8e','#4aa3ff'],fr=[262,330,392,523],seq=Array.from({length:5},()=>Math.random()*4|0);let at=0,lock=true;
- const b=el('div'),g=el('div','pads');
+function reto3(){const col=['#e0453a','#ffb703','#3ecf8e','#4aa3ff'],fr=[262,330,392,523],lens=[3,5,7];let rd=0,at=0,lock=true;
+ const mk=()=>Array.from({length:lens[rd]},()=>Math.random()*4|0);let seq=mk();
+ const b=el('div'),g=el('div','pads'),info=el('div','bar2'),upd=()=>{info.textContent='Señal '+(rd+1)+'/3 · '+lens[rd]+' pulsos'};upd();
+ const fl=i=>{beep(fr[i],.25,'sine');pads[i].classList.add('lit');setTimeout(()=>pads[i].classList.remove('lit'),240)};
+ const play=async()=>{lock=true;at=0;say('> Escucha…');const sp=450-rd*80;for(const s of seq){await sleep(sp);fl(s)}await sleep(300);lock=false;say('> Tu turno. Repite la señal.')};
  const pads=col.map((c,i)=>{const p=el('button','pad');p.style.background=c;p.style.color=c;p.setAttribute('aria-label','Canal '+(i+1));
-  p.onclick=()=>{if(lock)return;flash(i);if(i===seq[at]){if(++at===seq.length){lock=true;win('Señal interceptada.')}}else{at=0;lock=true;bad('Señal perdida. Pulsa reproducir para escuchar de nuevo.')}};g.append(p);return p});
- const flash=i=>{beep(fr[i],.25,'sine');pads[i].classList.add('lit');setTimeout(()=>pads[i].classList.remove('lit'),280)};
- const go=el('button','go','Reproducir señal');go.onclick=async()=>{lock=true;at=0;say('> Escucha…');for(const s of seq){await sleep(450);flash(s)}await sleep(400);lock=false;say('> Tu turno. Repite la señal.')};
- b.append(g,go,el('div','log','> Canal de radio activo.'));screen('Nivel 3: Interceptar la señal','Observa la secuencia de luces y repítela.',b,'Son 5 señales. Puedes volver a escucharlas las veces que quieras.')}
+  p.onclick=()=>{if(lock)return;fl(i);if(i===seq[at]){if(++at===seq.length){lock=true;if(rd<2){rd++;seq=mk();at=0;upd();say('> Señal completada. La siguiente es más larga y más rápida…');setTimeout(()=>beep(700,.2),300);setTimeout(play,2200)}else win('Señal interceptada.')}}else{at=0;lock=true;bad('Señal perdida. Pulsa reproducir para escuchar de nuevo.')}};g.append(p);return p});
+ const go=el('button','go','Reproducir señal');go.onclick=play;
+ b.append(info,g,go,el('div','log','> Canal de radio activo.'));screen('Nivel 3: Interceptar la señal','Supera 3 señales: cada una es más larga y más rápida que la anterior.',b,'Puedes volver a escuchar la señal las veces que quieras.')}
 // Reto 4: orden del trámite
 function reto4(){const ord=['📬 Llega el sobre','🔍 Se revisa','🤐 Se guarda en secreto','🚪 Se abre en el momento justo'];let n=0;const b=el('div');
  [...ord].sort(()=>Math.random()-.5).forEach(t=>{const x=el('button','tile',t);x.onclick=()=>{if(t===ord[n]){beep(520+n*80,.1);x.classList.add('ok');x.disabled=true;if(++n===ord.length)win('Secuencia validada.')}
@@ -113,7 +139,7 @@ function reto4(){const ord=['📬 Llega el sobre','🔍 Se revisa','🤐 Se guar
  b.append(el('div','log','> Ordena el procedimiento.'));screen('Nivel 4: Procedimiento','Toca los pasos en el orden correcto.',b,'Todo empieza cuando algo llega a tu escritorio.')}
 // Reto 5: perfil
 function reto5(){const b=el('div');
- [[nick+' (obvio)',1],['El gato del vecino',0],['Nadie, es imposible',0],['Un pingüino con corbata',0]].sort(()=>Math.random()-.5).forEach(([t,ok])=>{const x=el('button','opt',t);x.onclick=()=>ok?win('Identidad confirmada.'):bad('Rechazado. Los pingüinos no pasan el filtro.');b.append(x)});
+ [[nick+' (obvio)',1],['El gato del vecino',0,'Rechazado. El gato duerme 18 horas al día y no tiene huellas registradas.'],['Nadie, es imposible',0,'Error: el sistema no acepta rendirse. Intenta otra vez.'],['Un pingüino con corbata',0,'Rechazado. Los pingüinos no pasan el filtro de seguridad.'],['Un fantasma muy educado',0,'Rechazado. No hay forma de verificar su identidad (ni su sombra).']].sort(()=>Math.random()-.5).forEach(([t,ok,m])=>{const x=el('button','opt',t);x.onclick=()=>ok?win('Identidad confirmada.'):bad(m);b.append(x)});
  b.append(el('div','log','> Última verificación.'));screen('Nivel 5: Perfil del candidato','¿Quién es la persona ideal para recibir este archivo?',b,'Piensa en quién tiene el expediente delante.')}
 // Reto 6: ordenar las letras en la frase final
 function reto6(){const wl=[3,1,3,3],sl=Array(10).fill(null),used=Array(10).fill(false),b=el('div'),sw=el('div','slots'),tr=el('div','tray');
@@ -132,6 +158,10 @@ function next(){[reto1,reto2,reto3,reto4,reto5,reto6][step]()}
 // Radio interna (pistas sutiles)
 const radio=['Radio interna: alguien dejó un peluche en el archivo.','Compras: 9 cajas de pañuelos "para documentos".','Boletín: el jefe sonríe sin motivo aparente.','Mantenimiento: cambiaron la silla del almacén por una mecedora.','Aviso: silencio después de las 9, alguien duerme.','Cafetería: se acabó el café con cafeína. Misterio.'];let ri=0;
 function tick(){const t=$('#tick');t.replaceChildren(el('span','',radio[ri++%radio.length]))}tick();setInterval(tick,5000);
+let mx=-999,my=-999;
+document.addEventListener('pointermove',e=>{mx=e.clientX;my=e.clientY;const c=$('.card');if(!c||RM)return;const r=c.getBoundingClientRect();c.style.setProperty('--ry',((e.clientX-r.left)/r.width-.5)*8+'deg');c.style.setProperty('--rx',-((e.clientY-r.top)/r.height-.5)*8+'deg')});
+(function(){if(RM)return;const cv=$('#fx'),x=cv.getContext('2d');let w,h,ps=[];const rs=()=>{w=cv.width=innerWidth;h=cv.height=innerHeight;ps=Array.from({length:Math.min(70,w/14|0)},()=>({x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-.5)*.4,vy:(Math.random()-.5)*.4}))};rs();addEventListener('resize',rs);
+(function f(){x.clearRect(0,0,w,h);ps.forEach((p,i)=>{p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>w)p.vx*=-1;if(p.y<0||p.y>h)p.vy*=-1;const dx=mx-p.x,dy=my-p.y;if(Math.hypot(dx,dy)<140){p.x-=dx*.01;p.y-=dy*.01}x.fillStyle='#5eead4aa';x.fillRect(p.x,p.y,2,2);for(let j=i+1;j<ps.length;j++){const q=ps[j],e=Math.hypot(p.x-q.x,p.y-q.y);if(e<110){x.strokeStyle='rgba(94,234,212,'+(1-e/110)*.35+')';x.beginPath();x.moveTo(p.x,p.y);x.lineTo(q.x,q.y);x.stroke()}}});requestAnimationFrame(f)})()})();
 // Inicio
 const s=el('div'),go=el('button','go','Aceptar la misión');go.onclick=()=>{beep(440,.1);next()};
 s.append(el('div','log','> Conectando…\n> Agente '+nick+' identificado.'),go);
