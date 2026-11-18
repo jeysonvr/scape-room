@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Operación Cigüeña</title>
+<style>
+:root{--bg:#101826;--paper:#f2e9d8;--ink:#2b2620;--red:#c8372d;--mint:#8fe3c0;--amb:#ffb703}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--mint);font:16px/1.5 "Courier New",monospace;min-height:100vh;display:flex;justify-content:center;padding:16px}
+#app{width:100%;max-width:520px}
+.bar{letter-spacing:.15em;color:var(--amb);font-weight:700;text-align:center;margin:4px 0 14px}
+.card{background:var(--paper);color:var(--ink);border-radius:4px 14px 4px 4px;padding:18px;position:relative;box-shadow:0 6px 0 #0006}
+.card:before{content:"";position:absolute;top:-10px;left:0;width:90px;height:12px;background:var(--paper);border-radius:6px 6px 0 0}
+h1{font-size:1.25rem;margin:0 0 6px}
+.stamp{position:absolute;top:12px;right:12px;border:3px solid var(--red);color:var(--red);padding:0 6px;font-weight:700;transform:rotate(8deg);font-size:.8rem}
+.room{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:12px 0}
+.room button{font-size:2rem;background:#e2d6bd;border:2px solid #cbbd9e;border-radius:8px;padding:6px 0;cursor:pointer}
+button{font:inherit}
+button:focus-visible,input:focus-visible{outline:3px solid var(--amb);outline-offset:2px}
+.log{min-height:3.2em;background:#101826;color:var(--mint);padding:8px;border-radius:6px;margin:8px 0}
+.row{display:flex;gap:8px;justify-content:center;margin:10px 0}
+input{font:inherit;font-size:1.4rem;text-align:center;border:2px solid var(--ink);border-radius:6px;background:#fff;color:var(--ink);padding:6px}
+.d{width:3rem}.t{width:100%;letter-spacing:.2em;text-transform:uppercase}
+.go,.opt,.tile{display:block;width:100%;margin:6px 0;padding:10px;border:2px solid var(--ink);border-radius:8px;background:var(--amb);color:var(--ink);font-weight:700;cursor:pointer}
+.opt,.tile{background:#fff;text-align:left}.tile.ok{background:var(--mint);opacity:.7}
+.ghost{background:none;border:0;color:#6b5d44;text-decoration:underline;cursor:pointer;padding:0;margin-top:8px}
+.big{font-size:2.2rem;text-align:center;color:var(--red);font-weight:700;margin:6px 0}
+.cipher{font-size:1.8rem;letter-spacing:.3em;text-align:center;background:#101826;color:var(--mint);padding:10px;border-radius:6px}
+.shake{animation:sh .3s}@keyframes sh{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.cf{position:fixed;top:-2rem;font-size:1.6rem;animation:fall 4s linear forwards;pointer-events:none}
+@keyframes fall{to{transform:translateY(110vh) rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.cf,.shake{animation:none}}
+</style></head><body><main id="app"></main>
+<script>
+const $=document.querySelector.bind(document),app=$('#app');
+function el(t,c,x){const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+// --- Datos del link: ?d=<base64url de JSON {n,a,r,c,f}> ---
+function load(){try{const d=new URLSearchParams(location.search).get('d');if(!d)return{};
+const b=d.replace(/-/g,'+').replace(/_/g,'/');const j=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(b),c=>c.charCodeAt(0))));
+return j&&typeof j==='object'?j:{}}catch(e){return{}}}
+const P=load(),cl=(v,d)=>typeof v==='string'&&v.trim()?v.trim().slice(0,40):d;
+const name=cl(P.n,'Agente'),nick=cl(P.a,name),joke=cl(P.c,''),fecha=cl(P.f,''),fem=P.r==='a';
+const tio=fem?'TÍA':'TÍO',W=['VAS','A','SER',tio];
+let step=0,hints=0,hinted=false;
+const norm=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toUpperCase();
+function bar(){return el('div','bar',W.map((w,i)=>i<step?w:'▒'.repeat(w.length)).join(' '))}
+function screen(title,intro,body,hint){
+ hinted=false;const c=el('section','card');c.append(el('span','stamp','CLASIFICADO'),el('h1','',title),el('p','',intro),body);
+ if(hint){const h=el('p','');h.hidden=true;const b=el('button','ghost','¿Pista? (costo: tu dignidad)');
+  b.onclick=()=>{if(!hinted){hints++;hinted=true}h.textContent=hint;h.hidden=false};c.append(b,h)}
+ app.replaceChildren(bar(),c)}
+function win(m){const l=$('.log');l.textContent='> ACCESO PARCIAL: '+m+' Palabra desbloqueada: '+W[step];step++;setTimeout(next,1800)}
+function bad(m){const l=$('.log');l.textContent='> '+m;const c=$('.card');c.classList.remove('shake');void c.offsetWidth;c.classList.add('shake')}
+// --- Reto 1: candado 4 dígitos con pistas en la oficina ---
+const items=[['🗄️','Archivero con llave. Contiene 400 memos sobre grapadoras.'],
+['🖼️','Retrato de familia. Atrás, con letra torcida: "1.er dígito: 3". Hay un hueco en el marco para uno más.'],
+['🪴','Una planta. Dice no saber nada.'],['📞','Teléfono. Suena ocupado, como siempre.'],
+['☕','Café descafeinado. Muy sospechoso.'],['🍼','Biberón en el estante, medio vacío. En la etiqueta: "2.º dígito: 9".'],
+['🧦','Calcetín minúsculo. Seguro es de un hámster.'],['📅','Calendario con un círculo rojo. Anotado a lápiz: "4.º dígito: 7".'],
+['💼','Maletín vacío. Dentro, una nota: "no abrir el maletín".'],['🧸','Peluche tras la planta. Etiqueta de ropa: "3.er dígito: 0".'],
+['🔦','Linterna sin pilas. Útil como adorno.'],['🚪','Puerta cerrada con candado de 4 dígitos.']];
+function reto1(){const b=el('div'),room=el('div','room'),log=el('div','log','> Revisa la oficina. Toca los objetos.');
+ items.forEach(([e,t])=>{const x=el('button','',e);x.setAttribute('aria-label','Inspeccionar');x.onclick=()=>{log.textContent='> '+t};room.append(x)});
+ const row=el('div','row'),ins=[0,1,2,3].map(()=>{const i=el('input','d');i.maxLength=1;i.inputMode='numeric';i.setAttribute('aria-label','dígito');row.append(i);return i});
+ ins.forEach((i,k)=>i.oninput=()=>{if(i.value&&ins[k+1])ins[k+1].focus()});
+ const g=el('button','go','Abrir candado');g.onclick=()=>ins.map(i=>i.value).join('')==='3907'?win('Candado abierto.'):bad('Código incorrecto. El candado se ríe de ti.');
+ log.className='log';b.append(room,row,g,log);
+ screen('Reto 1: La oficina del jefe','Encuentra los 4 dígitos del candado en el orden indicado en las pistas.',b,'Mira bien los objetos: algunos son decoración, otros esconden un número.')}
+// --- Reto 2: cifrado César (+3) ---
+function reto2(){const b=el('div');b.append(el('div','cipher','ELEHURQ'));const i=el('input','t');i.setAttribute('aria-label','respuesta');
+ const g=el('button','go','Descifrar');g.onclick=()=>norm(i.value)==='BIBERON'?win('Mensaje descifrado.'):bad('Texto ilegible. Intenta otra vez.');
+ b.append(i,g,el('div','log','> Mensaje interceptado. El jefe siempre escribe corrido.'));
+ screen('Reto 2: Mensaje interceptado','Una sola palabra, escrita en clave. ¿Qué objeto del reto anterior es?',b,'Cada letra se movió 3 lugares hacia adelante. Retrocede 3: la E pasa a ser B.')}
+// --- Reto 3: ordenar la secuencia ---
+function reto3(){const ord=['🧪 La prueba','🩻 La ecografía','🤫 Guardar el secreto','🎉 La sorpresa'];let n=0;
+ const b=el('div'),log=el('div','log','> Ordena los eventos del expediente.');
+ [...ord].sort(()=>Math.random()-.5).forEach(t=>{const x=el('button','tile',t);x.onclick=()=>{
+  if(t===ord[n]){x.classList.add('ok');x.disabled=true;n++;if(n===ord.length)win('Secuencia validada.')}
+  else{n=0;b.querySelectorAll('.tile').forEach(y=>{y.classList.remove('ok');y.disabled=false});bad('Orden incorrecto. Se reinicia la secuencia.')}};b.append(x)});
+ b.append(log);screen('Reto 3: Cronología','Toca los eventos en el orden en que ocurrieron.',b,'Empieza por lo que se ve en una tira reactiva y termina con el anuncio.')}
+// --- Reto 4: personalizado ---
+function reto4(){const b=el('div'),log=el('div','log','> Última verificación de identidad.');
+ const o=[[nick+' (obvio)',1],['El gato del vecino',0],['Nadie, es imposible',0],['Un pingüino con corbata',0]].sort(()=>Math.random()-.5);
+ o.forEach(([t,ok])=>{const x=el('button','opt',t);x.onclick=()=>ok?win('Identidad confirmada.'):bad('Rechazado. Los pingüinos no pasan el filtro.');b.append(x)});
+ b.append(log);screen('Reto 4: Perfil del candidato','¿Quién es el candidato ideal para el puesto de '+(fem?'tía':'tío')+' oficial?',b,'Piensa en quién tiene el expediente delante.')}
+// --- Final ---
+function fin(){const c=el('section','card');c.append(el('span','stamp','DESCLASIFICADO'),el('h1','','Misión cumplida, '+nick),el('div','big','VAS A SER '+tio));
+ c.append(el('p','','Hay un bebé en camino y tú eres '+(fem?'la tía':'el tío')+' oficial.'+(fecha?' Fecha estimada: '+fecha+'.':'')));
+ if(joke)c.append(el('p','','Archivo extra: "'+joke+'"'));
+ c.append(el('p','','Pistas usadas: '+hints+'. Graba tu reacción y mándala.'));
+ const b=el('button','go','Copiar mi respuesta');b.onclick=()=>{const t='¡Ya lo sé! Voy a ser '+(fem?'tía':'tío')+' 🍼🎉';(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>b.textContent='Copiado').catch(()=>b.textContent=t)};
+ c.append(b);app.replaceChildren(bar(),c);
+ if(!matchMedia('(prefers-reduced-motion:reduce)').matches)for(let i=0;i<30;i++){const s=el('span','cf',['🎉','🍼','🧸','⭐'][i%4]);s.style.left=Math.random()*100+'vw';s.style.animationDelay=Math.random()*2+'s';document.body.append(s);setTimeout(()=>s.remove(),7000)}}
+function next(){[reto1,reto2,reto3,reto4,fin][step]()}
+// --- Inicio ---
+const s=el('div');const go=el('button','go','Aceptar la misión');go.onclick=next;
+s.append(el('div','log','> Conectando…\n> Agente '+nick+' identificado.'),go);
+screen('Operación Cigüeña','Agente '+name+': tenemos un expediente clasificado y solo tú puedes abrirlo. Resuelve 4 retos para desbloquearlo.',s);
+</script></body></html>

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Generador de links</title>
+<style>
+body{font:16px/1.5 "Courier New",monospace;background:#101826;color:#8fe3c0;max-width:520px;margin:0 auto;padding:16px}
+label{display:block;margin:10px 0 2px}
+input,select,textarea,button{font:inherit;width:100%;padding:8px;border-radius:6px;border:2px solid #2b2620;background:#f2e9d8;color:#2b2620}
+button{background:#ffb703;font-weight:700;margin-top:12px;cursor:pointer}
+output{display:block;word-break:break-all;margin-top:12px;background:#0a0f19;padding:8px;border-radius:6px}
+</style></head><body>
+<h1>Generador de links</h1>
+<p>Crea un link único por persona. Los datos viajan dentro del link, no se guardan en el repositorio.</p>
+<label for="n">Nombre</label><input id="n">
+<label for="a">Apodo (opcional)</label><input id="a">
+<label for="r">Rol</label><select id="r"><option value="o">Tío</option><option value="a">Tía</option></select>
+<label for="c">Chiste interno (opcional)</label><input id="c" maxlength="40">
+<label for="f">Fecha estimada (opcional)</label><input id="f" placeholder="ej. marzo de 2027">
+<button id="g">Generar link</button>
+<output id="o" aria-live="polite"></output>
+<button id="cp" hidden>Copiar link</button>
+<script>
+const $=id=>document.getElementById(id);
+$('g').onclick=()=>{
+ const d={n:$('n').value,a:$('a').value,r:$('r').value,c:$('c').value,f:$('f').value};
+ const bytes=new TextEncoder().encode(JSON.stringify(d));
+ const b64=btoa(String.fromCharCode(...bytes)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+ const u=new URL('index.html',location.href);u.search='?d='+b64;
+ $('o').textContent=u.href;$('cp').hidden=false};
+$('cp').onclick=()=>navigator.clipboard.writeText($('o').textContent).then(()=>$('cp').textContent='Copiado');
+</script></body></html>
