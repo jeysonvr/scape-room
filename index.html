@@ -71,6 +71,15 @@ input{font:inherit;font-size:1.4rem;text-align:center;border:2px solid var(--ink
 @keyframes wp{from{transform:translateX(-30vw)}to{transform:translateX(110vw)}}
 .prog{height:4px;background:#5eead422;border-radius:2px;margin:6px 0}.prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--teal),var(--amb));box-shadow:0 0 10px var(--teal);transition:width .8s}
 .bar2{font-weight:700;color:#6b5d44;text-align:center}
+body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+input{-webkit-user-select:text;user-select:text}
+.cipher{display:flex;justify-content:center}.cb{background:none;border:0;color:inherit;font:inherit;cursor:pointer;padding:0 .12em}.cb:hover{color:var(--amb)}
+.disc{margin:8px 0;background:#070d1a;border-radius:8px;padding:6px;color:var(--teal)}
+.dr{display:flex}.dr span{flex:1;text-align:center;font-size:.62rem;padding:2px 0}
+.dr.slide{animation:sl 1.2s .3s both}@keyframes sl{from{transform:translateX(12%)}}
+.dl{font-size:.6rem;color:#7dd3c0;text-align:center;letter-spacing:.2em}
+.hl{background:var(--amb);color:var(--ink);border-radius:3px;font-weight:700}
+.rules{margin:8px 0;background:#e2d6bd;border-radius:8px;padding:8px 8px 8px 26px;font-size:.9rem}
 </style></head><body><div id="bg"></div><canvas id="fx"></canvas>
 <div id="wrap"><div class="hud" id="hud"></div><div class="prog"><i id="pg"></i></div><div class="chips" id="chips"></div><main id="app"></main></div>
 <footer id="tick"><span></span></footer>
@@ -104,24 +113,28 @@ function wipe(){if(RM)return;const w=el('div','wipe');document.body.append(w);se
 function inspect(e,t){beep(300,.1,'triangle');let id;const o=el('div','ov'),c=el('div','ovc'),tx=el('div','ovt');
  c.append(el('div','ove',e),tx,el('div','ovh','toca para cerrar · Esc'));o.append(c);document.body.append(o);
  const k=ev=>{if(ev.key==='Escape')close()},close=()=>{clearInterval(id);o.remove();removeEventListener('keydown',k)};o.onclick=close;addEventListener('keydown',k);
- const m=t.match(/^(.*?dígito: )(\d)(.*)$/),full=m?m[1]:t,G='█▓▒░#%&@01';let i=0;
+ const m=t.match(/^(.*?)\{(\d)\}(.*)$/),full=m?m[1]:t,G='█▓▒░#%&@01';let i=0;
  id=setInterval(()=>{i+=2;if(RM)i=full.length;tx.textContent=full.slice(0,i)+Array.from({length:Math.max(0,Math.min(8,full.length-i))},()=>G[Math.random()*G.length|0]).join('');
   if(i>=full.length){clearInterval(id);tx.textContent=full;if(m){tx.append(el('span','key',m[2]));beep(880,.2);tx.append(m[3])}}},30)}
 // Reto 1: candado 3907
-const items=[['🗄️','Archivero. Contiene 400 memos sobre grapadoras.'],['🖼️','Retrato de familia. Atrás, con letra torcida: "1.er dígito: 3". Hay un hueco en el marco para uno más.'],['🪴','Una planta. Dice no saber nada.'],['📞','Teléfono. Suena ocupado, como siempre.'],
-['☕','Café descafeinado. Muy sospechoso.'],['🍼','Biberón en el estante, medio vacío. En la etiqueta: "2.º dígito: 9".'],['🧦','Calcetín minúsculo. Seguro es de un hámster.'],['📅','Calendario con un círculo rojo. A lápiz: "4.º dígito: 7".'],
-['💼','Maletín vacío. Nota: "no abrir el maletín".'],['🧸','Peluche tras la planta. En la etiqueta: "3.er dígito: 0".'],['🔦','Linterna sin pilas. Útil como adorno.'],['🚪','Puerta cerrada con candado de 4 dígitos.'],
+const items=[['🗄️','Archivero. Contiene 400 memos sobre grapadoras.'],['🖼️','Retrato de familia. Atrás, a lápiz: "20 de febrero: éramos {9} en la foto". Hay un hueco en el marco para uno más.'],['🪴','Una planta. Dice no saber nada.'],['📞','Teléfono. Suena ocupado, como siempre.'],
+['☕','Café descafeinado. Muy sospechoso.'],['🍼','Biberón en el estante, medio vacío. En la etiqueta: "lote {7}, 30 de junio".'],['🧦','Calcetín minúsculo. Seguro es de un hámster.'],['📅','Calendario con un círculo rojo en el 5 de enero y {3} estrellitas dibujadas.'],
+['💼','Maletín vacío. Nota: "no abrir el maletín".'],['🧸','Peluche tras la planta. Etiqueta de lavado: "14 de abril, {0} grados, sin secadora".'],['🔦','Linterna sin pilas. Útil como adorno.'],['🚪','Puerta cerrada con candado de 4 dígitos.'],
 ['🎵','Cajita de música. Suena una nana desafinada.'],['🧶','Lana a medio tejer. Nadie sabe quién empezó.'],['🧩','Puzzle de piezas enormes. "Mayores de 0 años".'],['🛒','Carrito de archivos. Alguien le puso cinturón.']];
-function reto1(){const b=el('div'),room=el('div','room'),log=el('div','log','> Revisa la oficina. Toca los objetos.');
+function reto1(){const b=el('div'),room=el('div','room'),log=el('div','log','> Revisa la oficina. El candado respeta el orden del calendario.');
  items.forEach(([e,t])=>{const x=el('button','',e);x.setAttribute('aria-label','Inspeccionar');x.onclick=()=>{x.classList.add('seen');inspect(e,t)};room.append(x)});
  const row=el('div','row'),ins=[0,1,2,3].map(()=>{const i=el('input','d');i.maxLength=1;i.inputMode='numeric';i.setAttribute('aria-label','dígito');row.append(i);return i});
  ins.forEach((i,k)=>i.oninput=()=>{if(i.value&&ins[k+1])ins[k+1].focus()});
  const g=el('button','go','Abrir candado');g.onclick=()=>ins.map(i=>i.value).join('')==='3907'?win('Candado abierto.'):bad('Código incorrecto. El candado se ríe de ti.');
- b.append(room,row,g,log);screen('Nivel 1: La oficina del jefe','Encuentra los 4 dígitos del candado, en el orden que indican las pistas.',b,'Algunos objetos son decoración y otros esconden un número.')}
+ b.append(room,row,g,log);screen('Nivel 1: La oficina del jefe','Cuatro objetos esconden un dígito. Encuentra cuándo y en qué orden usarlos.',b,'Los objetos con una fecha también guardan un número. Ordena los números según el calendario.')}
 // Reto 2: César +3 (BRUJULA)
-function reto2(){const b=el('div'),i=el('input','t');i.setAttribute('aria-label','respuesta');b.append(el('div','cipher','EUXMXOD'),i);
+function reto2(){const b=el('div'),i=el('input','t'),A='ABCDEFGHIJKLMNOPQRSTUVWXYZ',cp=el('div','cipher'),disc=el('div','disc'),top=el('div','dr'),bot=el('div','dr slide');
+ i.setAttribute('aria-label','respuesta');const sh=A.slice(3)+A.slice(0,3),T=[...A].map(c=>el('span','',c)),B=[...sh].map(c=>el('span','',c));top.append(...T);bot.append(...B);
+ disc.append(el('div','dl','REAL'),top,bot,el('div','dl','CLAVE ◄◄◄'));
+ [...'EUXMXOD'].forEach(c=>{const x=el('button','cb',c);x.setAttribute('aria-label','Letra '+c);x.onclick=()=>{beep(400,.05);[...T,...B].forEach(q=>q.classList.remove('hl'));const k=sh.indexOf(c);T[k].classList.add('hl');B[k].classList.add('hl')};cp.append(x)});
+ b.append(cp,disc,i);
  const g=el('button','go','Descifrar');g.onclick=()=>norm(i.value)==='BRUJULA'?win('Mensaje descifrado.'):bad('Texto ilegible. Intenta otra vez.');
- b.append(g,el('div','log','> Mensaje interceptado. Una palabra indica la dirección.'));screen('Nivel 2: Mensaje en clave','Descifra la palabra del archivo interceptado.',b,'Cada letra se movió 3 lugares hacia adelante. Retrocede 3: la E pasa a ser B.')}
+ b.append(g,el('div','log','> Toca una letra del mensaje: el disco te muestra su par.'));screen('Nivel 2: Mensaje en clave','Descifra la palabra del archivo interceptado.',b,'Cada letra se movió 3 lugares hacia adelante. Retrocede 3: la E pasa a ser B.')}
 // Reto 3: señal (Simon)
 function reto3(){const col=['#e0453a','#ffb703','#3ecf8e','#4aa3ff'],fr=[262,330,392,523],lens=[3,5,7];let rd=0,at=0,lock=true;
  const mk=()=>Array.from({length:lens[rd]},()=>Math.random()*4|0);let seq=mk();
@@ -133,10 +146,12 @@ function reto3(){const col=['#e0453a','#ffb703','#3ecf8e','#4aa3ff'],fr=[262,330
  const go=el('button','go','Reproducir señal');go.onclick=play;
  b.append(info,g,go,el('div','log','> Canal de radio activo.'));screen('Nivel 3: Interceptar la señal','Supera 3 señales: cada una es más larga y más rápida que la anterior.',b,'Puedes volver a escuchar la señal las veces que quieras.')}
 // Reto 4: orden del trámite
-function reto4(){const ord=['📬 Llega el sobre','🔍 Se revisa','🤐 Se guarda en secreto','🚪 Se abre en el momento justo'];let n=0;const b=el('div');
- [...ord].sort(()=>Math.random()-.5).forEach(t=>{const x=el('button','tile',t);x.onclick=()=>{if(t===ord[n]){beep(520+n*80,.1);x.classList.add('ok');x.disabled=true;if(++n===ord.length)win('Secuencia validada.')}
-  else{n=0;b.querySelectorAll('.tile').forEach(y=>{y.classList.remove('ok');y.disabled=false});bad('Orden incorrecto. Se reinicia el trámite.')}};b.append(x)});
- b.append(el('div','log','> Ordena el procedimiento.'));screen('Nivel 4: Procedimiento','Toca los pasos en el orden correcto.',b,'Todo empieza cuando algo llega a tu escritorio.')}
+function reto4(){const ord=['📬 Llega el sobre','🔍 Se revisa el contenido','🔏 Se sella','🤐 Se guarda en secreto','🚪 Se abre en el momento justo'],decoy='🔥 Se quema el sobre';let n=0;const b=el('div'),ul=el('ul','rules');
+ ['No se puede revisar lo que aún no ha llegado.','El sello va después de la revisión y justo antes de guardar.','Solo se abre cuando todo lo demás terminó.','En este archivo no se destruye nada.'].forEach(t=>ul.append(el('li','',t)));b.append(ul);
+ [...ord,decoy].sort(()=>Math.random()-.5).forEach(t=>{const x=el('button','tile',t);x.onclick=()=>{if(t===decoy){bad('Ese paso no pertenece al procedimiento.');return}
+  if(t===ord[n]){beep(520+n*80,.1);x.classList.add('ok');x.disabled=true;if(++n===ord.length)win('Procedimiento validado.')}
+  else{n=0;b.querySelectorAll('.tile').forEach(y=>{y.classList.remove('ok');y.disabled=false});bad('Orden incorrecto. Revisa las normas y reinicia el trámite.')}};b.append(x)});
+ b.append(el('div','log','> Analiza las normas antes de tocar.'));screen('Nivel 4: Procedimiento','Deduce el orden a partir de las normas. Ojo: un paso sobra.',b,'Hay un solo orden posible. Empieza por el paso que nada puede preceder y termina con el que la norma deja de último.')}
 // Reto 5: perfil
 function reto5(){const b=el('div');
  [[nick+' (obvio)',1],['El gato del vecino',0,'Rechazado. El gato duerme 18 horas al día y no tiene huellas registradas.'],['Nadie, es imposible',0,'Error: el sistema no acepta rendirse. Intenta otra vez.'],['Un pingüino con corbata',0,'Rechazado. Los pingüinos no pasan el filtro de seguridad.'],['Un fantasma muy educado',0,'Rechazado. No hay forma de verificar su identidad (ni su sombra).']].sort(()=>Math.random()-.5).forEach(([t,ok,m])=>{const x=el('button','opt',t);x.onclick=()=>ok?win('Identidad confirmada.'):bad(m);b.append(x)});

@@ -15,10 +15,10 @@ Sin `d`, o con `d` inválido, el juego usa textos genéricos ("Agente"). No hay 
 
 ## Flujo del juego (estado: `step` 0–5, luego `fin()`)
 Cada nivel 1–5 resuelto desbloquea 2 letras (`got += 2`) de la frase `VASASERTI` + `O|A`, mostradas barajadas en la bandeja HUD (`order`).
-1. `reto1` Candado de 4 dígitos. Código **3907**, dígitos escondidos en objetos de una oficina 4x4 (foto de familia=3, biberón=9, peluche=0, calendario=7). Al tocar un objeto se expande en pantalla completa (`inspect`) y su texto se descifra con efecto; el dígito clave aparece resaltado. Otros objetos son decoración con pistas sutiles.
-2. `reto2` Cifrado César +3: `EUXMXOD` → **BRUJULA** (se normaliza sin tildes).
+1. `reto1` Candado de 4 dígitos. Código **3907**, dígitos escondidos en objetos de una oficina 4x4 (calendario=3 [5 ene], foto=9 [20 feb], peluche=0 [14 abr], biberón=7 [30 jun]); el orden del código es el cronológico de las fechas, y cada dígito va entre llaves `{n}` en el texto. Al tocar un objeto se expande en pantalla completa (`inspect`) y su texto se descifra con efecto; el dígito clave aparece resaltado. Otros objetos son decoración con pistas sutiles.
+2. `reto2` Cifrado César +3: `EUXMXOD` → **BRUJULA** (se normaliza sin tildes). Incluye un disco de cifrado visual (REAL / CLAVE) donde tocar una letra del mensaje resalta su par.
 3. `reto3` Memoria tipo Simon en 3 rondas progresivas (3, 5 y 7 pulsos, cada una más rápida), 4 canales de color con sonido.
-4. `reto4` Ordenar 4 pasos: sobre → revisar → guardar en secreto → abrir.
+4. `reto4` Deducir el orden de 5 pasos a partir de 4 normas; un sexto paso ("quemar el sobre") sobra y se rechaza. Orden: sobre → revisar → sellar → guardar → abrir.
 5. `reto5` Elegir el candidato correcto: la opción con el apodo del jugador; cada opción incorrecta tiene su propio mensaje de error.
 6. `reto6` Ordenar las 10 letras en casillas con forma de frase (3,1,3,3) = `VAS A SER TIO/TIA`.
 Final (`fin`): revelación animada, mensaje, fecha y chiste del link, contador de pistas, botón de copiar respuesta, confeti.
@@ -26,6 +26,7 @@ Final (`fin`): revelación animada, mensaje, fecha y chiste del link, contador d
 ## Arquitectura
 - Funciones `retoN()` renderizan con `screen(title, intro, body, hint)`; `win()`/`bad()` gestionan éxito/error; `next()` despacha por `step`.
 - Efectos: fondo canvas de partículas reactivo al puntero, inclinación 3D de la tarjeta, barrido de transición entre niveles, destello verde/rojo en acierto/error, barra de progreso, sonido WebAudio (`beep`, silenciable), texto tipo máquina de escribir (`say`), partículas (`burst`), radio inferior con pistas (`radio[]`).
+- El texto no es seleccionable (salvo los campos de entrada).
 - Accesibilidad: `prefers-reduced-motion` desactiva animaciones; botones con `aria-label`; foco visible.
 - Seguridad: nunca usar `innerHTML` con datos del link.
 
